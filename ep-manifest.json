@@ -1,0 +1,25 @@
+{
+  "name": "EP Medical Pre-Plan",
+  "short_name": "EP Medical",
+  "description": "Executive Protection Medical Pre-Planning \u2014 Buckeye TacMed",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0C1929",
+  "theme_color": "#0C1929",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "ep-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "ep-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "scope": "./"
+}

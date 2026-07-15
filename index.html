@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>EP Medical Pre-Plan — Buckeye TacMed</title>
+<link rel="manifest" href="ep-manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EP Medical">
+<link rel="apple-touch-icon" href="ep-icon-192.png">
+<meta name="theme-color" content="#0C1929">
+<style>
+  :root {
+    --navy:      #0C1929;
+    --navy-mid:  #132236;
+    --navy-lt:   #1E3250;
+    --blue:      #185FA5;
+    --blue-lt:   #378ADD;
+    --blue-pale: #E6F1FB;
+    --gold:      #EF9F27;
+    --gold-lt:   #FAC775;
+    --cream:     #E8F0FB;
+    --ink:       #0e0e0c;
+    --muted:     #8899bb;
+    --border:    rgba(255,255,255,.1);
+    --border-lt: rgba(255,255,255,.06);
+    --input-bg:  rgba(255,255,255,.05);
+    --input-bg-hover: rgba(255,255,255,.08);
+    --card-bg:   #132236;
+    --section-bg:#0f1e30;
+    --radius:    8px;
+    --radius-lg: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0a1520;
+    color: var(--cream);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── SPLASH ── */
+  #splash.fade-out { opacity: 0 !important; pointer-events: none; }
+  #splash.gone { display: none !important; }
+  .splash-logo { height: 80px; width: auto; opacity: 0; transform: translateY(12px); animation: splashLogoIn .8s ease forwards; animation-delay: .3s; }
+  .splash-tagline { font-size: 13px; font-weight: 400; letter-spacing: .18em; text-transform: uppercase; color: #7AABEA; opacity: 0; margin-top: 18px; animation: splashTagIn .7s ease forwards; animation-delay: 1.1s; }
+  .splash-divider { width: 0; height: 1px; background: rgba(24,95,165,.4); margin-top: 14px; animation: splashLineIn .6s ease forwards; animation-delay: .9s; }
+  @keyframes splashLogoIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes splashTagIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes splashLineIn { from { width: 0; } to { width: 180px; } }
+
+  /* ── PIN LOCK ── */
+  #pin-lock {
+    position: fixed; inset: 0;
+    background: var(--navy);
+    z-index: 99998;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0;
+    opacity: 0; transition: opacity .4s ease;
+    visibility: visible;
+  }
+  #pin-lock.visible { opacity: 1; }
+  #pin-lock.unlocked { display: none; }
+  .pin-logo { height: 60px; width: auto; margin-bottom: 24px; }
+  .pin-title { font-size: 12px; font-weight: 600; color: var(--gold); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; }
+  .pin-sub { font-size: 11px; color: var(--muted); margin-bottom: 28px; }
+  .pin-dots { display: flex; gap: 12px; margin-bottom: 24px; }
+  .pin-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--navy-lt); background: transparent; transition: background .15s, border-color .15s; }
+  .pin-dot.filled { background: var(--blue); border-color: var(--blue); }
+  .pin-dot.error  { background: #8B1A1A; border-color: #8B1A1A; }
+  .pin-pad { display: grid; grid-template-columns: repeat(3, 64px); gap: 8px; margin-bottom: 16px; }
+  .pin-key { width: 64px; height: 64px; border-radius: 50%; border: 1px solid var(--navy-lt); background: var(--navy-mid); color: var(--cream); font-size: 20px; font-weight: 400; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .1s; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .pin-key:active { background: var(--blue); border-color: var(--blue-lt); }
+  .pin-key.empty  { background: transparent; border: none; cursor: default; }
+  .pin-key.del    { font-size: 16px; }
+  .pin-error-msg { font-size: 11px; color: #e07070; height: 16px; font-weight: 600; }
+  .pin-lock-msg  { font-size: 10px; color: var(--muted); margin-top: 6px; }
+  @keyframes pinShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)} 60%{transform:translateX(-8px)} 80%{transform:translateX(8px)} }
+  .pin-dots.shake { animation: pinShake .4s ease; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── LAYOUT ── */
+  .page-wrap { max-width: 780px; margin: 0 auto; padding: 0 0 80px; }
+
+  /* ── HEADER ── */
+  .form-header {
+    background: var(--navy);
+    border-bottom: 2px solid var(--blue);
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo { height: 48px; width: auto; }
+  .header-title { font-size: 13px; font-weight: 500; color: var(--cream); }
+  .header-sub { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .header-badge { background: var(--blue); color: var(--cream); font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 4px; letter-spacing: .06em; }
+  .header-version { font-size: 10px; color: var(--gold); font-weight: 600; }
+  .btn-refresh { background: rgba(255,255,255,.08); border: 1px solid var(--border); border-radius: 6px; color: var(--cream); font-size: 10px; padding: 3px 8px; cursor: pointer; font-family: inherit; }
+
+  /* ── FORM BODY ── */
+  .form-body { background: var(--section-bg); margin: 0 0 0; }
+
+  /* ── SECTIONS ── */
+  .section { padding: 18px 20px; border-bottom: 1px solid var(--border-lt); }
+  .sec-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .sec-label::after { content: ''; flex: 1; height: 0.5px; background: rgba(239,159,39,.2); }
+
+  /* ── GRID ── */
+  .grid { display: grid; gap: 8px 12px; }
+  .g1 { grid-template-columns: 1fr; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+
+  /* ── FIELDS ── */
+  .field { display: flex; flex-direction: column; gap: 3px; }
+  .field label { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+  .field input, .field select, .field textarea {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--cream);
+    font-size: 13px;
+    font-family: inherit;
+    padding: 8px 10px;
+    outline: none;
+    width: 100%;
+    transition: border-color .15s, background .15s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--blue);
+    background: var(--input-bg-hover);
+  }
+  .field select option { background: var(--navy-mid); color: var(--cream); }
+  .field textarea { resize: vertical; min-height: 60px; }
+
+  /* ── RADIO PILLS ── */
+  .radio-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .rpill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px;
+    cursor: pointer; font-size: 12px; background: var(--input-bg);
+    color: var(--cream); user-select: none; white-space: nowrap; flex-shrink: 0;
+    transition: border-color .12s, background .12s;
+  }
+  .rpill:has(input:checked) { border-color: var(--blue); background: rgba(24,95,165,.2); color: var(--blue-lt); }
+  .rpill input[type=radio] { width: 12px; height: 12px; accent-color: var(--blue); }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: visible; margin-bottom: 8px;
+  }
+  .card-head {
+    background: rgba(24,95,165,.15); padding: 8px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border-lt); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .card-head-label { font-size: 11px; font-weight: 600; color: var(--blue-lt); }
+  .card-body { padding: 12px 14px; }
+
+  /* ── DYNAMIC ROWS ── */
+  .dyn-row {
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 12px; margin-bottom: 6px;
+    display: grid; gap: 6px 10px;
+  }
+  .dyn-row-2 { grid-template-columns: 1fr 1fr auto; }
+  .dyn-row-3 { grid-template-columns: 1fr 1fr 1fr auto; }
+  .btn-remove {
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 10px; font-size: 11px; cursor: pointer;
+    font-family: inherit; white-space: nowrap; align-self: end;
+    transition: color .12s, border-color .12s;
+  }
+  .btn-remove:hover { color: #e07070; border-color: #8B1A1A; }
+  .btn-add {
+    background: rgba(24,95,165,.15); color: var(--blue-lt); border: 1px solid rgba(24,95,165,.3);
+    border-radius: var(--radius); padding: 7px 14px; font-size: 12px; font-weight: 500;
+    cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 4px; transition: background .12s;
+  }
+  .btn-add:hover { background: rgba(24,95,165,.25); }
+
+  /* ── DAY SCHEDULE ── */
+  .day-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); margin-bottom: 8px; overflow: visible;
+  }
+  .day-head {
+    padding: 8px 14px; background: rgba(239,159,39,.1);
+    border-bottom: 1px solid var(--border-lt); display: flex;
+    align-items: center; justify-content: space-between;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .day-label { font-size: 11px; font-weight: 600; color: var(--gold); }
+  .day-body { padding: 10px 14px; }
+
+  /* ── WEATHER GRID ── */
+  .wx-day-card {
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 8px 10px; text-align: center;
+  }
+  .wx-day-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .wx-day-temp { font-size: 18px; font-weight: 500; color: var(--cream); }
+  .wx-day-cond { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .wx-day-precip { font-size: 10px; color: var(--blue-lt); margin-top: 2px; }
+  .wx-flag-hot { border-color: rgba(239,159,39,.5); background: rgba(239,159,39,.08); }
+  .wx-flag-hot .wx-day-temp { color: var(--gold); }
+
+  /* ── CHECKLIST ── */
+  .checklist { display: flex; flex-direction: column; gap: 6px; }
+  .check-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; background: var(--input-bg);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    cursor: pointer; transition: border-color .12s;
+  }
+  .check-item:has(input:checked) { border-color: rgba(93,202,165,.4); background: rgba(93,202,165,.06); }
+  .check-item input[type=checkbox] { width: 14px; height: 14px; accent-color: #5DCAA5; flex-shrink: 0; }
+  .check-item label { font-size: 12px; color: var(--cream); cursor: pointer; flex: 1; }
+  .check-item:has(input:checked) label { color: #5DCAA5; }
+
+  /* ── HOSPITAL BANNERS ── */
+  .hosp-banner {
+    display: none; margin-bottom: 10px; border-radius: var(--radius-lg); overflow: visible;
+    border: 1.5px solid var(--blue); background: var(--card-bg);
+  }
+  .hosp-banner-head { background: var(--blue); padding: 8px 14px; display: flex; align-items: center; gap: 8px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .hosp-banner-title { font-size: 12px; font-weight: 500; color: var(--cream); }
+  .hosp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+  .hosp-suggest-item { padding: 10px 14px; border-bottom: 0.5px solid var(--border-lt); display: flex; align-items: flex-start; gap: 12px; }
+  .hosp-suggest-item:last-child { border-bottom: none; }
+  .hosp-suggest-info { flex: 1; }
+  .hosp-suggest-name { font-size: 13px; font-weight: 500; color: var(--cream); margin-bottom: 2px; }
+  .hosp-suggest-meta { font-size: 11px; color: var(--muted); }
+  .hosp-suggest-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+  .btn-use { background: var(--blue); color: var(--cream); border: none; border-radius: 6px; padding: 5px 10px; font-size: 11px; font-weight: 500; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .rank-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+  .rank-1 { background: rgba(139,26,26,.3); color: #e07070; }
+  .rank-2 { background: rgba(239,159,39,.2); color: var(--gold); }
+  .rank-3 { background: rgba(93,202,165,.15); color: #5DCAA5; }
+
+  /* ── ACTION BAR ── */
+  .action-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--navy); border-top: 1px solid var(--border);
+    padding: 10px 20px; display: flex; gap: 10px; z-index: 100;
+    max-width: 780px; margin: 0 auto;
+  }
+  .btn-pdf {
+    flex: 1; background: var(--blue); color: var(--cream); border: none;
+    border-radius: var(--radius); padding: 12px; font-size: 14px;
+    font-weight: 500; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background .12s;
+  }
+  .btn-pdf:hover { background: var(--blue-lt); }
+  .btn-clear {
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 20px; font-size: 14px;
+    cursor: pointer; font-family: inherit; transition: border-color .12s;
+  }
+  .btn-clear:hover { border-color: var(--blue); color: var(--cream); }
+
+  /* ── AUTOCOMPLETE ── */
+  .autocomplete-wrap { position: relative; width: 100%; }
+  .pac-drop {
+    position: absolute; top: 100%; left: 0; right: auto;
+    min-width: 100%; width: max-content; max-width: min(420px, 92vw);
+    background: var(--navy-mid); border: 1px solid var(--border);
+    border-radius: var(--radius); z-index: 9999; margin-top: 2px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4); max-height: 280px; overflow-y: auto;
+  }
+  .pac-item { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border-lt); }
+  .pac-item:hover { background: var(--input-bg-hover); }
+  .pac-main { font-size: 13px; font-weight: 500; color: var(--cream); white-space: normal; word-break: break-word; }
+  .pac-sub { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: normal; word-break: break-word; line-height: 1.4; }
+
+  /* ── ALERT BANNERS ── */
+  .alert-banner { border-radius: var(--radius); overflow: hidden; border: 1.5px solid; margin-bottom: 6px; }
+  .alert-head { padding: 7px 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--cream); }
+  .alert-body { padding: 8px 12px; font-size: 11px; color: var(--cream); background: rgba(0,0,0,.2); line-height: 1.5; }
+  .alert-extreme  { border-color: #8B1A1A; } .alert-extreme .alert-head  { background: #8B1A1A; }
+  .alert-severe   { border-color: #d4691a; } .alert-severe .alert-head   { background: #d4691a; }
+  .alert-moderate { border-color: var(--gold); } .alert-moderate .alert-head { background: rgba(239,159,39,.3); color: var(--gold); }
+
+  /* ── SIGNOFF ── */
+  .signoff-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── PRINT ── */
+  @media print {
+    @page { size: letter; margin: 0.28in 0.32in; }
+    * { box-sizing: border-box !important; }
+    body { background: #fff !important; font-size: 7.5px !important; color: #111 !important; line-height: 1.2 !important; }
+    .page-wrap { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    .form-header { background: #0C1929 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; padding: 4px 10px !important; position: relative !important; }
+    .header-title { font-size: 9px !important; color: #E8F0FB !important; }
+    .header-sub { font-size: 6.5px !important; color: #8899bb !important; }
+    .btn-refresh, .action-bar, #pin-lock { display: none !important; }
+    .form-body { border: none !important; }
+    .section { padding: 3px 8px !important; border-bottom: 0.5px solid #ddd !important; break-inside: avoid !important; }
+    .sec-label { font-size: 6px !important; margin-bottom: 2px !important; color: #185FA5 !important; }
+    .grid { gap: 1px 6px !important; }
+    .g2 { grid-template-columns: repeat(2,1fr) !important; }
+    .g3 { grid-template-columns: repeat(3,1fr) !important; }
+    .field label { font-size: 6px !important; color: #555 !important; }
+    .field input, .field select, .field textarea { font-size: 7.5px !important; border: none !important; border-bottom: 0.4px solid #aaa !important; background: transparent !important; color: #111 !important; min-height: 0 !important; padding: 0 0 1px !important; -webkit-appearance: none !important; }
+    .field select { appearance: none !important; }
+    .dyn-row { background: #f8f8f6 !important; border: 0.4px solid #ccc !important; padding: 2px 4px !important; margin-bottom: 2px !important; }
+    .dyn-row-2, .dyn-row-3 { gap: 1px 6px !important; }
+    .btn-remove, .btn-add { display: none !important; }
+    .rpill { border: none !important; background: transparent !important; color: #111 !important; padding: 0 !important; font-size: 7px !important; }
+    .card { background: #f8f8f6 !important; border: 0.4px solid #ccc !important; border-radius: 2px !important; margin-bottom: 3px !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .card-head { background: rgba(24,95,165,.1) !important; padding: 2px 5px !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .card-head-label { font-size: 6.5px !important; }
+    .card-body { padding: 3px 5px !important; }
+    .hosp-banner { display: none !important; }
+    .alert-banner { display: none !important; }
+    .checklist .check-item { background: transparent !important; border: none !important; border-bottom: 0.4px solid #eee !important; border-radius: 0 !important; padding: 1px 0 !important; }
+    .check-item label { font-size: 7px !important; color: #111 !important; }
+    .wx-day-card { background: #f8f8f6 !important; border: 0.4px solid #ccc !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .wx-day-temp { font-size: 10px !important; color: #111 !important; }
+    .wx-day-label, .wx-day-cond, .wx-day-precip { font-size: 6px !important; color: #555 !important; }
+    a[id^="dir-btn-"] { display: inline-block !important; font-size: 7px !important; padding: 2px 6px !important; border-radius: 2px !important; text-decoration: none !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background: #185FA5 !important; color: #fff !important; }
+    .day-card { background: #f8f8f6 !important; border: 0.4px solid #ccc !important; border-radius: 2px !important; margin-bottom: 3px !important; }
+    .day-head { background: rgba(239,159,39,.08) !important; padding: 2px 5px !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .day-label { font-size: 6.5px !important; color: #185FA5 !important; }
+    .day-body { padding: 3px 5px !important; }
+    .form-body::after {
+      content: "Buckeye TacMed EP Medical Pre-Plan | buckeyetacmed@gmail.com | Pre-planning aid only — verify all information before operations.";
+      display: block !important; font-size: 6px !important; color: #999 !important;
+      text-align: center !important; padding: 4px 0 2px !important;
+      border-top: 0.4px solid #ddd !important; margin-top: 4px !important;
+    }
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 600px) {
+    .form-header { padding: 10px 14px; }
+    .header-logo { height: 36px; }
+    .section { padding: 14px; }
+    .g2, .g3 { grid-template-columns: 1fr !important; }
+    .signoff-row { grid-template-columns: 1fr; }
+    .dyn-row-2, .dyn-row-3 { grid-template-columns: 1fr !important; }
+    .dyn-row .btn-remove { width: 100%; }
+    .rpill { padding: 5px 10px; font-size: 12px; }
+    .action-bar { padding: 10px 14px; }
+    .btn-pdf { font-size: 13px; padding: 11px; }
+  }
+</style>
+</head>
+<body style="visibility:hidden;">
+
+<!-- ── SPLASH ── -->
+<div id="splash" style="position:fixed;inset:0;z-index:9999999;background:#0C1929;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:opacity .65s ease;visibility:visible;">
+  <img src="data:image/png;base64,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" class="splash-logo" alt="Buckeye TacMed">
+  <div class="splash-divider"></div>
+  <div class="splash-tagline">Executive Protection Medical Plan</div>
+</div>
+
+<!-- ── PIN LOCK ── -->
+<div id="pin-lock">
+  <div class="pin-title">EP Medical Pre-Plan</div>
+  <div class="pin-sub">Enter your 4-digit PIN to continue</div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pinKey('1')">1</button>
+    <button class="pin-key" onclick="pinKey('2')">2</button>
+    <button class="pin-key" onclick="pinKey('3')">3</button>
+    <button class="pin-key" onclick="pinKey('4')">4</button>
+    <button class="pin-key" onclick="pinKey('5')">5</button>
+    <button class="pin-key" onclick="pinKey('6')">6</button>
+    <button class="pin-key" onclick="pinKey('7')">7</button>
+    <button class="pin-key" onclick="pinKey('8')">8</button>
+    <button class="pin-key" onclick="pinKey('9')">9</button>
+    <div class="pin-key empty"></div>
+    <button class="pin-key" onclick="pinKey('0')">0</button>
+    <button class="pin-key del" onclick="pinDel()">&#9003;</button>
+  </div>
+  <div class="pin-error-msg" id="pin-error"></div>
+  <div class="pin-lock-msg" id="pin-lock-msg"></div>
+</div>
+
+<!-- ── PAGE ── -->
+<div class="page-wrap" id="page-wrap" style="visibility:hidden;">
+
+  <!-- HEADER -->
+  <div class="form-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">EP Medical Pre-Plan</div>
+        <div class="header-sub">Executive Protection Medical Operations — Buckeye TacMed</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="header-badge">EP MEDICAL</span>
+      <span class="header-version">v1.0</span>
+      <button class="btn-refresh" onclick="refreshApp()">&#8635; Refresh</button>
+    </div>
+  </div>
+
+  <div class="form-body">
+
+    <!-- ── 1. EVENT INFORMATION ── -->
+    <div class="section">
+      <div class="sec-label">Event information</div>
+      <div class="grid g2">
+        <div class="field"><label>Event name</label><input type="text" id="ev_name" placeholder="e.g. National Tour — Cleveland Stop"></div>
+        <div class="field"><label>Event type</label>
+          <select id="ev_type" onchange="toggleEvTypeOther()">
+            <option value="">Select type...</option>
+            <option>Concert / Music Event</option>
+            <option>Sports Event</option>
+            <option>Political Rally / Campaign</option>
+            <option>Corporate Event</option>
+            <option>Private VIP Function</option>
+            <option>Multi-Day Festival</option>
+            <option>Film / TV Production</option>
+            <option>Religious / Faith Event</option>
+            <option value="Other">Other</option>
+          </select>
+          <input type="text" id="ev_type_other" placeholder="Specify event type..." style="display:none;margin-top:5px;">
+        </div>
+        <div class="field"><label>Start date</label><input type="date" id="ev_start" onchange="autoGenerateDays()"></div>
+        <div class="field"><label>End date</label><input type="date" id="ev_end" onchange="autoGenerateDays()"></div>
+        <div class="field"><label>Expected attendance (per day)</label><input type="text" id="ev_attend" placeholder="e.g. 15,000"></div>
+        <div class="field"><label>Venue capacity</label><input type="text" id="ev_capacity" placeholder="e.g. 20,000"></div>
+      </div>
+      <div class="grid g2" style="margin-top:8px;">
+        <div class="field"><label>Indoor / Outdoor</label>
+          <div class="radio-row">
+            <label class="rpill"><input type="radio" name="venue_type" value="indoor"> Indoor</label>
+            <label class="rpill"><input type="radio" name="venue_type" value="outdoor"> Outdoor</label>
+            <label class="rpill"><input type="radio" name="venue_type" value="mixed"> Mixed</label>
+          </div>
+        </div>
+        <div class="field"><label>Security level</label>
+          <div class="radio-row">
+            <label class="rpill"><input type="radio" name="sec_level" value="low"> Low</label>
+            <label class="rpill"><input type="radio" name="sec_level" value="medium"> Medium</label>
+            <label class="rpill"><input type="radio" name="sec_level" value="high"> High</label>
+            <label class="rpill"><input type="radio" name="sec_level" value="critical"> Critical</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. VENUE ── -->
+    <div class="section">
+      <div class="sec-label">Venue location</div>
+      <div class="grid g2">
+        <div class="field"><label>Venue / facility name</label><input type="text" id="venue_name" placeholder="e.g. FirstEnergy Stadium"></div>
+        <div class="field"><label>Address</label>
+          <div class="autocomplete-wrap" id="venue-wrap">
+            <input type="text" id="venue_addr" placeholder="Search address..." autocomplete="off" oninput="handleInput(this,'venue')">
+            <div class="pac-drop" id="venue-drop" style="display:none"></div>
+          </div>
+        </div>
+        <div class="field"><label>City</label><input type="text" id="venue_city"></div>
+        <div class="field"><label>GPS coordinates</label><input type="text" id="venue_gps" readonly style="background:var(--input-bg);opacity:.7;" placeholder="Auto-filled from address"></div>
+      </div>
+      <div class="grid g2" style="margin-top:8px;">
+        <div class="field"><label>Venue medical officer / contact</label><input type="text" id="venue_med" placeholder="Name and title"></div>
+        <div class="field"><label>Venue operations phone</label><input type="tel" id="venue_ops_ph" placeholder="(000) 000-0000"></div>
+      </div>
+    </div>
+
+    <!-- ── 3. DAILY SCHEDULE ── -->
+    <div class="section">
+      <div class="sec-label">Daily schedule</div>
+      <div id="days-list"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button class="btn-add" onclick="addDay()">+ Add day</button>
+        <button class="btn-add" onclick="copyScheduleToAll()" style="background:rgba(239,159,39,.1);color:var(--gold);border-color:rgba(239,159,39,.3);">&#9660; Copy Day 1 schedule to all days</button>
+      </div>
+    </div>
+
+    <!-- ── 4. PRINCIPAL / VIP INFORMATION ── -->
+    <div class="section">
+      <div class="sec-label">Principal / VIP information</div>
+      <div id="principals-list"></div>
+      <button class="btn-add" onclick="addPrincipal()">+ Add principal</button>
+    </div>
+
+    <!-- ── 5. MEDICAL TEAM / STAFFING ── -->
+    <div class="section">
+      <div class="sec-label">Medical team — staffing</div>
+      <div id="staff-list"></div>
+      <button class="btn-add" onclick="addStaff()">+ Add provider</button>
+    </div>
+
+    <!-- ── 6. MEDICAL POST LOCATIONS ── -->
+    <div class="section">
+      <div class="sec-label">Medical post locations</div>
+      <div id="posts-list"></div>
+      <button class="btn-add" onclick="addPost()">+ Add post</button>
+    </div>
+
+    <!-- ── 7. ZONE / VENUE NOTES ── -->
+    <div class="section">
+      <div class="sec-label">Zones &amp; venue layout</div>
+      <div id="zones-list"></div>
+      <button class="btn-add" onclick="addZone()">+ Add zone</button>
+    </div>
+
+    <!-- ── 8. HOSPITAL & TRAUMA CENTERS ── -->
+    <div class="section">
+      <div class="sec-label">Hospital &amp; trauma centers</div>
+
+      <!-- NWS Alerts -->
+      <div id="wx-alerts-section" style="display:none;margin-bottom:10px;"><div id="wx-alerts-container"></div></div>
+
+      <!-- Hospital suggestion banner -->
+      <div class="hosp-banner" id="hosp-suggest">
+        <div class="hosp-banner-head">
+          <div class="hosp-dot" id="hosp-suggest-dot"></div>
+          <span class="hosp-banner-title" id="hosp-suggest-title">Finding nearest trauma centers...</span>
+        </div>
+        <div id="hosp-suggest-list"></div>
+        <div style="padding:7px 14px;background:rgba(139,26,26,.1);border-top:1px solid var(--border-lt);display:flex;align-items:flex-start;gap:8px;">
+          <span style="color:#e07070;font-size:13px;flex-shrink:0;">&#9888;</span>
+          <span style="font-size:11px;color:#e07070;line-height:1.5;"><strong>Always verify trauma center status before transport.</strong> Trauma designations can change. Confirm with medical control before committing a transport route.</span>
+        </div>
+        <div style="padding:7px 14px;border-top:1px solid var(--border-lt);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:10px;color:var(--muted);">Based on venue GPS &nbsp;|&nbsp; Last updated: April 2026</span>
+          <button onclick="document.getElementById('hosp-suggest').style.display='none'" style="background:transparent;border:none;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit;">Dismiss</button>
+        </div>
+      </div>
+
+      <!-- Hospital cards -->
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card" id="h1-card">
+          <div class="card-head">
+            <span class="card-head-label">Primary facility <span id="h1-level-badge" style="display:none;font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(139,26,26,.3);color:#e07070;margin-left:6px;"></span></span>
+          </div>
+          <div class="card-body">
+            <div class="grid g2">
+              <div class="field"><label>Facility name</label><input type="text" id="h1_name" placeholder="Auto-suggested or search manually"></div>
+              <div class="field"><label>Address</label><input type="text" id="h1_addr"></div>
+              <div class="field"><label>GPS</label><input type="text" id="h1_gps" readonly style="opacity:.7;"></div>
+              <div class="field"><label>Main phone</label><input type="tel" id="h1_phone"></div>
+              <div class="field"><label>ED direct line</label><input type="tel" id="h1_trauma" placeholder="Call main line to obtain direct ED number"></div>
+              <div class="field"><label>Drive time</label><input type="text" id="h1_time"></div>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+              <a id="dir-btn-h1" href="#" target="_blank" rel="noopener" style="display:inline-block;background:var(--blue);color:var(--cream);text-decoration:none;border-radius:var(--radius);padding:7px 14px;font-size:12px;font-weight:500;font-family:inherit;">&#9655; Directions to primary</a>
+              <button onclick="clearHospCard('h1')" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit;">&#10005; Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="h2-card">
+          <div class="card-head"><span class="card-head-label">Secondary facility <span id="h2-level-badge" style="display:none;font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(239,159,39,.2);color:var(--gold);margin-left:6px;"></span></span></div>
+          <div class="card-body">
+            <div class="grid g2">
+              <div class="field"><label>Facility name</label><input type="text" id="h2_name"></div>
+              <div class="field"><label>Address</label><input type="text" id="h2_addr"></div>
+              <div class="field"><label>GPS</label><input type="text" id="h2_gps" readonly style="opacity:.7;"></div>
+              <div class="field"><label>Main phone</label><input type="tel" id="h2_phone"></div>
+              <div class="field"><label>Drive time</label><input type="text" id="h2_time"></div>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+              <a id="dir-btn-h2" href="#" target="_blank" rel="noopener" style="display:inline-block;background:var(--blue);color:var(--cream);text-decoration:none;border-radius:var(--radius);padding:7px 14px;font-size:12px;font-weight:500;font-family:inherit;">&#9655; Directions to secondary</a>
+              <button onclick="clearHospCard('h2')" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit;">&#10005; Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="h3-card">
+          <div class="card-head"><span class="card-head-label">Pediatric / Specialty <span id="h3-level-badge" style="display:none;font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(93,202,165,.15);color:#5DCAA5;margin-left:6px;"></span></span></div>
+          <div class="card-body">
+            <div class="grid g2">
+              <div class="field"><label>Facility name</label><input type="text" id="h3_name"></div>
+              <div class="field"><label>Address</label><input type="text" id="h3_addr"></div>
+              <div class="field"><label>Drive time</label><input type="text" id="h3_time"></div>
+              <div class="field"><label>Main phone</label><input type="tel" id="h3_phone"></div>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+              <a id="dir-btn-h3" href="#" target="_blank" rel="noopener" style="display:inline-block;background:var(--blue);color:var(--cream);text-decoration:none;border-radius:var(--radius);padding:7px 14px;font-size:12px;font-weight:500;font-family:inherit;">&#9655; Directions to specialty</a>
+              <button onclick="clearHospCard('h3')" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit;">&#10005; Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 9. EMERGENCY VEHICLES & STAGING ── -->
+    <div class="section">
+      <div class="sec-label">Emergency vehicles &amp; staging</div>
+      <div class="grid g2">
+        <div class="field"><label>Ambulance staging location</label><input type="text" id="amb_staging" placeholder="Location description or GPS"></div>
+        <div class="field"><label>Units on standby</label><input type="text" id="amb_units" placeholder="e.g. 2 ALS, 1 BLS"></div>
+        <div class="field"><label>HEMS / air medical availability</label>
+          <div class="radio-row">
+            <label class="rpill"><input type="radio" name="hems_avail" value="yes"> Yes</label>
+            <label class="rpill"><input type="radio" name="hems_avail" value="no"> No</label>
+            <label class="rpill"><input type="radio" name="hems_avail" value="standby"> On standby</label>
+          </div>
+        </div>
+        <div class="field"><label>HEMS callsign / phone</label><input type="text" id="hems_call" placeholder="e.g. MedFlight 3 / (330) 000-0000"></div>
+        <div class="field"><label>EMS supervisor</label><input type="text" id="ems_super" placeholder="Name and contact"></div>
+        <div class="field"><label>Medical director</label><input type="text" id="ep_med_dir" placeholder="Name and contact"></div>
+      </div>
+    </div>
+
+    <!-- ── 10. MULTI-DAY WEATHER ── -->
+    <div class="section">
+      <div class="sec-label">Multi-day weather forecast</div>
+      <div id="wx-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;margin-bottom:8px;"></div>
+      <div id="wx-status" style="font-size:11px;color:var(--muted);">Pick venue address to auto-fetch weather for event dates.</div>
+    </div>
+
+    <!-- ── 11. COMMUNICATIONS ── -->
+    <div class="section">
+      <div class="sec-label">Communications</div>
+      <div class="grid g2">
+        <div class="field"><label>Incident commander</label><input type="text" id="ep_ic" placeholder="Name / call sign / radio channel"></div>
+        <div class="field"><label>Event security command</label><input type="text" id="ep_sec_cmd" placeholder="Name and contact"></div>
+        <div class="field"><label>Venue operations</label><input type="text" id="ep_venue_ops" placeholder="Name and contact"></div>
+        <div class="field"><label>Local EMS dispatch</label><input type="text" id="ep_dispatch" placeholder="Phone / radio"></div>
+        <div class="field"><label>Police liaison</label><input type="text" id="ep_police" placeholder="Name and contact"></div>
+        <div class="field"><label>Fire department contact</label><input type="text" id="ep_fire" placeholder="Name and contact"></div>
+        <div class="field"><label>Primary medical radio channel</label><input type="text" id="ep_med_radio" placeholder="e.g. MED 9 / TAC 3"></div>
+        <div class="field"><label>Security radio channel</label><input type="text" id="ep_sec_radio" placeholder="e.g. SEC 1"></div>
+      </div>
+    </div>
+
+    <!-- ── 12. CROWD MEDICAL CONSIDERATIONS ── -->
+    <div class="section">
+      <div class="sec-label">Crowd medical considerations</div>
+      <div class="grid g2">
+        <div class="field"><label>Alcohol / substance expected</label>
+          <div class="radio-row">
+            <label class="rpill"><input type="radio" name="substance" value="yes"> Yes</label>
+            <label class="rpill"><input type="radio" name="substance" value="no"> No</label>
+            <label class="rpill"><input type="radio" name="substance" value="unknown"> Unknown</label>
+          </div>
+        </div>
+        <div class="field"><label>Crowd demographic</label>
+          <select id="crowd_demo">
+            <option value="">Select...</option>
+            <option>General mixed</option>
+            <option>Mostly minors</option>
+            <option>Mostly elderly</option>
+            <option>Athletes / performers</option>
+            <option>Political attendees</option>
+          </select>
+        </div>
+        <div class="field"><label>MCI threshold for this event</label><input type="text" id="mci_thresh" placeholder="e.g. 5 casualties triggers MCI protocol"></div>
+        <div class="field"><label>Mutual aid trigger point</label><input type="text" id="mutual_aid" placeholder="e.g. Call mutual aid at 10+ casualties"></div>
+      </div>
+      <div class="field" style="margin-top:8px;"><label>Known crowd medical considerations / notes</label>
+        <textarea id="crowd_notes" placeholder="Any known medical considerations for this event or crowd type..."></textarea>
+      </div>
+    </div>
+
+    <!-- ── 13. PRE-EVENT CHECKLIST ── -->
+    <div class="section">
+      <div class="sec-label">Pre-event checklist</div>
+      <div class="checklist">
+        <div class="check-item"><input type="checkbox" id="chk1"><label for="chk1">Hospital notifications sent — primary and secondary facilities notified of event</label></div>
+        <div class="check-item"><input type="checkbox" id="chk2"><label for="chk2">All AEDs inspected and pads checked for expiration</label></div>
+        <div class="check-item"><input type="checkbox" id="chk3"><label for="chk3">Radio communications tested — all channels confirmed with team</label></div>
+        <div class="check-item"><input type="checkbox" id="chk4"><label for="chk4">All medical posts stocked and inventoried</label></div>
+        <div class="check-item"><input type="checkbox" id="chk5"><label for="chk5">Medical team briefed — all providers have reviewed pre-plan</label></div>
+        <div class="check-item"><input type="checkbox" id="chk6"><label for="chk6">Weather reviewed for event duration</label></div>
+        <div class="check-item"><input type="checkbox" id="chk7"><label for="chk7">Routes to primary and secondary hospitals verified</label></div>
+        <div class="check-item"><input type="checkbox" id="chk8"><label for="chk8">Principal medical profiles reviewed by TEMS lead</label></div>
+        <div class="check-item"><input type="checkbox" id="chk9"><label for="chk9">Ambulance staging confirmed and crew briefed</label></div>
+        <div class="check-item"><input type="checkbox" id="chk10"><label for="chk10">MCI plan reviewed with IC and security command</label></div>
+        <div class="check-item"><input type="checkbox" id="chk11"><label for="chk11">Medical director notified and available for consultation</label></div>
+        <div class="check-item"><input type="checkbox" id="chk12"><label for="chk12">All principal emergency contacts verified and saved</label></div>
+      </div>
+    </div>
+
+    <!-- ── 14. SIGN-OFF ── -->
+    <div class="section">
+      <div class="sec-label">Pre-event sign-off</div>
+      <div class="signoff-row">
+        <div class="field"><label>Sign-off date &amp; time</label><input type="datetime-local" id="signoff_dt"></div>
+        <div class="field"><label>Medical director notified</label>
+          <div class="radio-row">
+            <label class="rpill"><input type="radio" name="md_notif" value="yes"> Yes</label>
+            <label class="rpill"><input type="radio" name="md_notif" value="no"> No</label>
+            <label class="rpill"><input type="radio" name="md_notif" value="na"> N/A</label>
+          </div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:8px;"><label>Additional notes</label>
+        <textarea id="signoff_notes" style="min-height:70px;" placeholder="Any additional pre-event medical notes, concerns, or special instructions..."></textarea>
+      </div>
+    </div>
+
+  </div><!-- /form-body -->
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <button class="btn-clear" onclick="clearForm()">&#8635; Clear</button>
+    <button class="btn-pdf" onclick="generatePDF()">&#128247; Save as PDF &amp; Share</button>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<script>
+// ── PIN ────────────────────────────────────────────────────────────────────────
+var _PINS = {
+  '3883': 'Buckeye TacMed',
+};
+var _pinEntry = '', _pinFails = 0, _pinLocked = false;
+
+function pinKey(d) {
+  if (_pinLocked || _pinEntry.length >= 4) return;
+  _pinEntry += d; updatePinDots();
+  if (_pinEntry.length === 4) setTimeout(checkPin, 120);
+}
+function pinDel() {
+  if (_pinLocked) return;
+  _pinEntry = _pinEntry.slice(0,-1); updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+}
+function updatePinDots() {
+  for (var i=0;i<4;i++) document.getElementById('pd'+i).className='pin-dot'+(i<_pinEntry.length?' filled':'');
+}
+function checkPin() {
+  if (_PINS.hasOwnProperty(_pinEntry)) {
+    document.getElementById('pin-lock').classList.add('unlocked');
+    sessionStorage.setItem('ep_unlocked','1');
+    document.body.style.visibility = 'visible';
+    var pw = document.getElementById('page-wrap');
+    if (pw) pw.style.visibility = 'visible';
+  } else {
+    _pinFails++; _pinEntry = ''; updatePinDots();
+    var dots = document.getElementById('pin-dots');
+    for (var i=0;i<4;i++) document.getElementById('pd'+i).className='pin-dot error';
+    dots.classList.add('shake');
+    setTimeout(function(){ dots.classList.remove('shake'); for(var i=0;i<4;i++) document.getElementById('pd'+i).className='pin-dot'; },500);
+    if (_pinFails>=5) {
+      _pinLocked=true;
+      var lu=Date.now()+30*60*1000; sessionStorage.setItem('ep_lockuntil',lu); startLockout(lu);
+    } else {
+      document.getElementById('pin-error').textContent='Incorrect PIN ('+(5-_pinFails)+' attempt'+(5-_pinFails===1?'':'s')+' remaining)';
+    }
+  }
+}
+function startLockout(until) {
+  var iv=setInterval(function(){
+    var rem=Math.ceil((until-Date.now())/1000);
+    if(rem<=0){clearInterval(iv);_pinLocked=false;_pinFails=0;document.getElementById('pin-lock-msg').textContent='';document.getElementById('pin-error').textContent='You may try again.';}
+    else{var m=Math.floor(rem/60),s=rem%60;document.getElementById('pin-lock-msg').textContent='Too many attempts. Locked for '+m+':'+(s<10?'0':'')+s;}
+  },1000);
+}
+(function(){
+  sessionStorage.removeItem('ep_unlocked');
+  var lu=parseInt(sessionStorage.getItem('ep_lockuntil')||'0');
+  if(lu>Date.now()){_pinLocked=true;_pinFails=5;startLockout(lu);}
+})();
+document.addEventListener('keydown',function(e){
+  if(document.getElementById('pin-lock').classList.contains('unlocked')) return;
+  if(e.key>='0'&&e.key<='9') pinKey(e.key);
+  if(e.key==='Backspace') pinDel();
+});
+
+// ── AUTOCOMPLETE ──────────────────────────────────────────────────────────────
+var _dropTimers = {};
+function handleInput(el, key) {
+  var q = el.value.trim();
+  var dropId = key+'-drop';
+  var drop = document.getElementById(dropId);
+  clearTimeout(_dropTimers[key]);
+  if (q.length < 2) { drop.style.display='none'; return; }
+  _dropTimers[key] = setTimeout(function(){ doSearch(q, key); }, 350);
+}
+function doSearch(q, key) {
+  var url = 'https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q+' Ohio')
+    +'&format=json&addressdetails=1&limit=7&countrycodes=us';
+  fetch(url, {headers:{'Accept-Language':'en-US','User-Agent':'BuckeyeTacMed-EP/1.0'}})
+    .then(function(r){return r.json();})
+    .then(function(results){renderDrop(results,key);})
+    .catch(function(){});
+}
+function renderDrop(results, key) {
+  var drop = document.getElementById(key+'-drop');
+  if (!results.length) { drop.style.display='none'; return; }
+  drop.innerHTML=''; drop.style.display='block';
+  results.forEach(function(r){
+    var a=r.address||{};
+    var name=r.name||r.display_name.split(',')[0];
+    var city=a.city||a.town||a.village||'';
+    var state=a.state||'';
+    var road=a.road||'';
+    var hnum=a.house_number||'';
+    var street=hnum?(hnum+' '+road).trim():road;
+    var full=[street,city,state,a.postcode].filter(Boolean).join(', ');
+    var div=document.createElement('div');
+    div.className='pac-item';
+    div.innerHTML='<div class="pac-main">'+(name||full)+'</div>'+(full&&name!==full?'<div class="pac-sub">'+full+'</div>':'');
+    div.onclick=function(){pickLocation(r,key);};
+    drop.appendChild(div);
+  });
+}
+function pickLocation(r, key) {
+  var a=r.address||{};
+  var lat=parseFloat(r.lat).toFixed(5);
+  var lon=parseFloat(r.lon).toFixed(5);
+  var gps=lat+', '+lon;
+  var city=a.city||a.town||a.village||a.municipality||'';
+  var hnum=a.house_number||'';
+  var road=a.road||'';
+  var street=hnum?(hnum+' '+road).trim():road;
+  var fullAddr=street?[street,city,a.state,a.postcode].filter(Boolean).join(', '):(r.display_name||'');
+  var placeName=r.name||r.display_name.split(',')[0];
+  document.getElementById(key+'-drop').style.display='none';
+
+  if (key==='venue') {
+    document.getElementById('venue_addr').value=fullAddr||placeName;
+    document.getElementById('venue_gps').value=gps;
+    if(city) document.getElementById('venue_city').value=city;
+    fetchNWSAlerts(parseFloat(r.lat),parseFloat(r.lon));
+    findNearestHospitals(parseFloat(r.lat),parseFloat(r.lon));
+    fetchMultiDayWeather(parseFloat(r.lat),parseFloat(r.lon));
+  }
+}
+document.addEventListener('click',function(e){
+  document.querySelectorAll('.pac-drop').forEach(function(d){
+    if(!d.contains(e.target)&&!d.previousElementSibling.contains(e.target)) d.style.display='none';
+  });
+});
+
+// ── DYNAMIC ROWS ──────────────────────────────────────────────────────────────
+var _dayCount=0, _principalCount=0, _staffCount=0, _postCount=0, _zoneCount=0;
+
+function addDay() {
+  _dayCount++;
+  var idx=_dayCount;
+  var list=document.getElementById('days-list');
+  var div=document.createElement('div');
+  div.className='day-card';
+  div.setAttribute('data-day',idx);
+  div.innerHTML=
+    '<div class="day-head">'+
+      '<span class="day-label">Day '+idx+'</span>'+
+      '<button class="btn-remove" onclick="this.closest(\'[data-day]\').remove()">&#10005; Remove</button>'+
+    '</div>'+
+    '<div class="day-body">'+
+      '<div class="grid g3">'+
+        '<div class="field"><label>Date</label><input type="date" id="day_date_'+idx+'"></div>'+
+        '<div class="field"><label>Start time</label><input type="time" id="day_start_'+idx+'"></div>'+
+        '<div class="field"><label>End time</label><input type="time" id="day_end_'+idx+'"></div>'+
+      '</div>'+
+      '<div class="grid g2" style="margin-top:6px;">'+
+        '<div class="field"><label>Event / activity</label><input type="text" id="day_activity_'+idx+'" placeholder="e.g. Main show, Load-in, VIP reception"></div>'+
+        '<div class="field"><label>Expected attendance</label><input type="text" id="day_attend_'+idx+'" placeholder="e.g. 12,000"></div>'+
+        '<div class="field"><label>Notes / risk factors</label><input type="text" id="day_notes_'+idx+'" placeholder="Weather concerns, schedule changes, etc."></div>'+
+      '</div>'+
+    '</div>';
+  list.appendChild(div);
+}
+
+function addPrincipal() {
+  _principalCount++;
+  var idx=_principalCount;
+  var list=document.getElementById('principals-list');
+  var div=document.createElement('div');
+  div.className='card';
+  div.setAttribute('data-prin',idx);
+  div.innerHTML=
+    '<div class="card-head">'+
+      '<span class="card-head-label">Principal #'+idx+'</span>'+
+      '<button class="btn-remove" onclick="this.closest(\'[data-prin]\').remove()">&#10005; Remove</button>'+
+    '</div>'+
+    '<div class="card-body">'+
+      '<div class="grid g2">'+
+        '<div class="field"><label>Full name</label><input type="text" id="pr_name_'+idx+'" placeholder="Principal / VIP name"></div>'+
+        '<div class="field"><label>Role / title</label><input type="text" id="pr_role_'+idx+'" placeholder="e.g. Artist, CEO, Candidate"></div>'+
+        '<div class="field"><label>Blood type</label>'+
+          '<select id="pr_blood_'+idx+'"><option value="">Unknown</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>'+
+        '</div>'+
+        '<div class="field"><label>Security level</label>'+
+          '<select id="pr_sec_'+idx+'"><option value="">Select...</option><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select>'+
+        '</div>'+
+        '<div class="field"><label>Drug allergies</label><input type="text" id="pr_allergy_'+idx+'" placeholder="e.g. Penicillin — anaphylaxis"></div>'+
+        '<div class="field"><label>Current medications</label><input type="text" id="pr_meds_'+idx+'" placeholder="e.g. Metoprolol 25mg daily"></div>'+
+        '<div class="field"><label>Pre-existing conditions</label><input type="text" id="pr_conditions_'+idx+'" placeholder="e.g. Hypertension, asthma"></div>'+
+        '<div class="field"><label>Personal physician</label><input type="text" id="pr_physician_'+idx+'" placeholder="Name and phone"></div>'+
+        '<div class="field"><label>Hospital preference</label><input type="text" id="pr_hosp_pref_'+idx+'" placeholder="Preferred receiving facility"></div>'+
+        '<div class="field"><label>Emergency contact</label><input type="text" id="pr_ec_'+idx+'" placeholder="Name and phone"></div>'+
+      '</div>'+
+      '<div class="field" style="margin-top:6px;"><label>Additional medical notes</label><textarea id="pr_notes_'+idx+'" placeholder="Any other clinically relevant information..."></textarea></div>'+
+    '</div>';
+  list.appendChild(div);
+}
+
+function addStaff() {
+  _staffCount++;
+  var idx=_staffCount;
+  var list=document.getElementById('staff-list');
+  var div=document.createElement('div');
+  div.className='card';
+  div.setAttribute('data-staff',idx);
+  div.style.marginBottom='8px';
+
+  // Build day checkboxes from current day cards
+  var dayCards=document.querySelectorAll('[data-day]');
+  var dayChecks='';
+  if(dayCards.length>0){
+    dayCards.forEach(function(dc){
+      var d=dc.getAttribute('data-day');
+      var dateEl=document.getElementById('day_date_'+d);
+      var label='Day '+d;
+      if(dateEl&&dateEl.value){
+        var dt=new Date(dateEl.value+'T12:00:00');
+        label='Day '+d+' ('+(dt.getMonth()+1)+'/'+dt.getDate()+')';
+      }
+      dayChecks+='<label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--cream);margin-right:8px;cursor:pointer;white-space:nowrap;">'+
+        '<input type="checkbox" id="st_day_'+idx+'_'+d+'" style="accent-color:var(--blue);width:12px;height:12px;"> '+label+'</label>';
+    });
+  } else {
+    dayChecks='<span style="font-size:11px;color:var(--muted);">Add days in schedule section to assign by day</span>';
+  }
+
+  div.innerHTML=
+    '<div class="card-head" style="display:flex;align-items:center;justify-content:space-between;">'+
+      '<span class="card-head-label">Provider #'+idx+'</span>'+
+      '<button class="btn-remove" data-remove="data-staff">&#10005; Remove</button>'+
+    '</div>'+
+    '<div class="card-body">'+
+      '<div class="grid g2">'+
+        '<div class="field"><label>Provider name</label><input type="text" id="st_name_'+idx+'" placeholder="Full name"></div>'+
+        '<div class="field"><label>Role</label>'+
+          '<select id="st_role_'+idx+'"><option value="">Select...</option><option>Lead Medic</option><option>Secondary Medic</option><option>TEMS Medic</option><option>Event Medic</option><option>Tactical Nurse</option><option>Tactical Physician</option><option>EMT-Basic</option><option>Paramedic</option><option>Other</option></select>'+
+        '</div>'+
+        '<div class="field"><label>Assigned zone / post</label><input type="text" id="st_zone_'+idx+'" placeholder="e.g. VIP Medical, Gate 3"></div>'+
+        '<div class="field"><label>Contact number</label><input type="tel" id="st_phone_'+idx+'" placeholder="(000) 000-0000"></div>'+
+        '<div class="field"><label>Shift start</label><input type="time" id="st_start_'+idx+'"></div>'+
+        '<div class="field"><label>Shift end</label><input type="time" id="st_end_'+idx+'"></div>'+
+      '</div>'+
+      '<div class="field" style="margin-top:8px;">'+
+        '<label>Days assigned</label>'+
+        '<div id="st_days_wrap_'+idx+'" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;padding:8px 10px;background:var(--input-bg);border:1px solid var(--border);border-radius:var(--radius);">'+
+          dayChecks+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  list.appendChild(div);
+}
+
+function addPost() {
+  _postCount++;
+  var idx=_postCount;
+  var list=document.getElementById('posts-list');
+  var div=document.createElement('div');
+  div.className='card';
+  div.setAttribute('data-post',idx);
+  div.innerHTML=
+    '<div class="card-head">'+
+      '<span class="card-head-label">Medical Post #'+idx+'</span>'+
+      '<button class="btn-remove" onclick="this.closest(\'[data-post]\').remove()">&#10005; Remove</button>'+
+    '</div>'+
+    '<div class="card-body">'+
+      '<div class="grid g2">'+
+        '<div class="field"><label>Post name</label>'+
+          '<select id="post_type_'+idx+'"><option>Main Medical</option><option>VIP Medical</option><option>Field Post</option><option>Backstage Medical</option><option>Gate Medical</option><option>Parking Medical</option><option>Other</option></select>'+
+        '</div>'+
+        '<div class="field"><label>Location description</label><input type="text" id="post_loc_'+idx+'" placeholder="Section, gate, landmark"></div>'+
+        '<div class="field"><label>Equipment on hand</label><input type="text" id="post_equip_'+idx+'" placeholder="e.g. AED, O2, ALS kit, TCCC kit"></div>'+
+        '<div class="field"><label>Staff assigned</label><input type="text" id="post_staff_'+idx+'" placeholder="Provider names"></div>'+
+        '<div class="field"><label>Radio channel</label><input type="text" id="post_radio_'+idx+'" placeholder="e.g. MED 2"></div>'+
+        '<div class="field"><label>GPS / coordinates</label><input type="text" id="post_gps_'+idx+'" placeholder="Optional GPS"></div>'+
+      '</div>'+
+    '</div>';
+  list.appendChild(div);
+}
+
+function addZone() {
+  _zoneCount++;
+  var idx=_zoneCount;
+  var list=document.getElementById('zones-list');
+  var div=document.createElement('div');
+  div.className='dyn-row';
+  div.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px 10px;';
+  div.setAttribute('data-zone',idx);
+  div.innerHTML=
+    '<div class="field"><label>Zone name</label><input type="text" id="zone_name_'+idx+'" placeholder="e.g. VIP, Stage, GA Pit"></div>'+
+    '<div class="field"><label>Crowd density</label>'+
+      '<select id="zone_density_'+idx+'"><option value="">Select...</option><option>Low</option><option>Medium</option><option>High</option><option>Crush risk</option></select>'+
+    '</div>'+
+    '<div class="field"><label>Known hazards / access notes</label><input type="text" id="zone_notes_'+idx+'" placeholder="Obstacles, egress, hazards"></div>'+
+    '<button class="btn-remove" onclick="this.closest(\'[data-zone]\').remove()" style="align-self:end;">&#10005;</button>';
+  list.appendChild(div);
+}
+
+// Auto-add defaults
+addDay();
+addPrincipal();
+addStaff();
+addPost();
+
+// ── HOSPITAL DATABASE ─────────────────────────────────────────────────────────
+var OHIO_TRAUMA = [
+  {name:'MetroHealth Medical Center',addr:'2500 MetroHealth Dr, Cleveland, OH 44109',lat:41.4786,lon:-81.7016,level:'Level I',phone:'(216) 778-7800'},
+  {name:'University Hospitals Cleveland',addr:'11100 Euclid Ave, Cleveland, OH 44106',lat:41.5055,lon:-81.6099,level:'Level I',phone:'(216) 844-1000'},
+  {name:'Cleveland Clinic Main Campus',addr:'9500 Euclid Ave, Cleveland, OH 44195',lat:41.5022,lon:-81.6197,level:'Level II',phone:'(216) 444-2200'},
+  {name:'Summa Health Akron City Hospital',addr:'525 E Market St, Akron, OH 44304',lat:41.0793,lon:-81.5157,level:'Level II',phone:'(330) 375-3000'},
+  {name:'Cleveland Clinic Akron General',addr:'1 Akron General Ave, Akron, OH 44307',lat:41.0662,lon:-81.5380,level:'Level II',phone:'(330) 344-6000'},
+  {name:'Aultman Hospital',addr:'2600 Sixth St SW, Canton, OH 44710',lat:40.7923,lon:-81.3878,level:'Level II',phone:'(330) 452-9911'},
+  {name:'Mercy Health St. Vincent Medical',addr:'2213 Cherry St, Toledo, OH 43608',lat:41.6740,lon:-83.5551,level:'Level I',phone:'(419) 251-3232'},
+  {name:'OhioHealth Grant Medical Center',addr:'111 S Grant Ave, Columbus, OH 43215',lat:39.9601,lon:-82.9988,level:'Level I',phone:'(614) 566-9000'},
+  {name:'OhioHealth Riverside Methodist',addr:'3535 Olentangy River Rd, Columbus, OH 43214',lat:40.0451,lon:-83.0224,level:'Level II',phone:'(614) 566-5000'},
+  {name:'Miami Valley Hospital',addr:'1 Wyoming St, Dayton, OH 45409',lat:39.7494,lon:-84.1930,level:'Level I',phone:'(937) 208-8000'},
+  {name:'St. Elizabeth Youngstown',addr:'1044 Belmont Ave, Youngstown, OH 44501',lat:41.0998,lon:-80.6612,level:'Level II',phone:'(330) 746-7211'},
+  {name:'UC Health University Cincinnati',addr:'234 Goodman St, Cincinnati, OH 45219',lat:39.1398,lon:-84.5027,level:'Level I',phone:'(513) 584-1000'},
+  {name:'Bethesda North Hospital',addr:'10500 Montgomery Rd, Cincinnati, OH 45242',lat:39.2635,lon:-84.3780,level:'Level II',phone:'(513) 865-1111'},
+  {name:'CCF Hillcrest Hospital',addr:'6780 Mayfield Rd, Mayfield Heights, OH 44124',lat:41.5186,lon:-81.4633,level:'Level II',phone:'(440) 312-4500'},
+  {name:'UH Rainbow Babies & Childrens',addr:'11100 Euclid Ave, Cleveland, OH 44106',lat:41.5060,lon:-81.6087,level:'Level I Pediatric',phone:'(216) 844-3911'},
+  {name:'Nationwide Childrens Hospital',addr:'700 Childrens Dr, Columbus, OH 43205',lat:39.9573,lon:-82.9916,level:'Level I Pediatric',phone:'(614) 722-2000'},
+  {name:'Cincinnati Childrens Hospital',addr:'3333 Burnet Ave, Cincinnati, OH 45229',lat:39.1440,lon:-84.4993,level:'Level I Pediatric',phone:'(513) 636-4200'},
+  {name:'Akron Childrens Hospital',addr:'1 Perkins Sq, Akron, OH 44308',lat:41.0731,lon:-81.5157,level:'Level II Pediatric',phone:'(330) 543-1000'},
+  {name:'Robinson Memorial Hospital',addr:'6847 N Chestnut St, Ravenna, OH 44266',lat:41.1634,lon:-81.3558,level:'Level III',phone:'(330) 297-0811'},
+  {name:'Cleveland Clinic Fairview Hospital',addr:'18101 Lorain Ave, Cleveland, OH 44111',lat:41.4409,lon:-81.7751,level:'Level II',phone:'(216) 476-7000'},
+  {name:'Southwest General Health Center',addr:'18697 Bagley Rd, Middleburg Heights, OH 44130',lat:41.3665,lon:-81.8127,level:'Level III',phone:'(440) 816-8000'},
+  {name:'UH St. John Medical Center',addr:'29000 Center Ridge Rd, Westlake, OH 44145',lat:41.4553,lon:-81.9177,level:'Level III',phone:'(440) 835-8000'},
+  {name:'Mercy Health Lorain Hospital',addr:'3700 Kolbe Rd, Lorain, OH 44053',lat:41.4343,lon:-82.1985,level:'Level III',phone:'(440) 960-4000'},
+  {name:'Firelands Regional Medical Center',addr:'1111 Hayes Ave, Sandusky, OH 44870',lat:41.4489,lon:-82.6988,level:'Level III',phone:'(419) 557-7400'},
+  {name:'Trumbull Regional Medical Center',addr:'1350 E Market St, Warren, OH 44483',lat:41.2376,lon:-80.7985,level:'Level III',phone:'(330) 841-9011'},
+  {name:'Lake Health TriPoint Medical',addr:'7590 Auburn Rd, Concord Twp, OH 44077',lat:41.6812,lon:-81.2457,level:'Level III',phone:'(440) 375-8100'},
+  {name:'Genesis Healthcare System',addr:'2951 Maple Ave, Zanesville, OH 43701',lat:39.9551,lon:-82.0196,level:'Level III',phone:'(740) 454-5000'},
+  {name:'Adena Regional Medical Center',addr:'272 Hospital Rd, Chillicothe, OH 45601',lat:39.3579,lon:-82.9905,level:'Level III',phone:'(740) 779-7500'},
+  {name:'Kettering Health Main Campus',addr:'3535 Southern Blvd, Kettering, OH 45429',lat:39.7070,lon:-84.1698,level:'Level II',phone:'(937) 298-4331'},
+  {name:'Summa Health Barberton Hospital',addr:'155 Fifth St NE, Barberton, OH 44203',lat:41.0134,lon:-81.6051,level:'Level III',phone:'(330) 615-3000'},
+];
+
+function haversineKm(lat1,lon1,lat2,lon2){
+  var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function findNearestHospitals(lat,lon) {
+  var banner=document.getElementById('hosp-suggest');
+  var titleEl=document.getElementById('hosp-suggest-title');
+  var dotEl=document.getElementById('hosp-suggest-dot');
+  var listEl=document.getElementById('hosp-suggest-list');
+  banner.style.display='block'; listEl.innerHTML='';
+  dotEl.style.animation='pulse 1.5s ease-in-out infinite';
+
+  var withSL=OHIO_TRAUMA.map(function(h){return{h:h,slKm:haversineKm(lat,lon,h.lat,h.lon)};}).sort(function(a,b){return a.slKm-b.slKm;}).slice(0,5);
+
+  // Show instant estimates
+  var instant=withSL.slice(0,3).map(function(item){return{h:item.h,miles:(item.slKm*0.621371*1.4).toFixed(1),minutes:Math.round((item.slKm*0.621371*1.4/40)*60),est:true};});
+  renderHospSuggestions(instant,listEl,titleEl,dotEl,true);
+
+  // OSRM refine
+  var coords=lon.toFixed(6)+','+lat.toFixed(6);
+  withSL.forEach(function(i){coords+=';'+i.h.lon.toFixed(6)+','+i.h.lat.toFixed(6);});
+  var destIdx=withSL.map(function(_,i){return i+1;}).join(';');
+  var osrmUrl='https://router.project-osrm.org/table/v1/driving/'+coords+'?sources=0&destinations='+destIdx+'&annotations=distance,duration';
+  var timeout=new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},10000);});
+
+  Promise.race([fetch(osrmUrl).then(function(r){return r.json();}),timeout])
+    .then(function(data){
+      if(!data.distances||!data.durations) throw new Error('no data');
+      var results=withSL.map(function(item,i){return{h:item.h,miles:(data.distances[0][i]*0.000621371).toFixed(1),minutes:Math.round(data.durations[0][i]/60)};}).filter(function(r){return r.miles>0;}).sort(function(a,b){return a.miles-b.miles;});
+      listEl.innerHTML='';
+      renderHospSuggestions(results.slice(0,3),listEl,titleEl,dotEl,false);
+    })
+    .catch(function(){
+      titleEl.innerHTML='<span style="color:var(--gold-lt);font-weight:500;">&#9888; Nearest trauma centers — estimated distance</span>';
+      dotEl.style.animation='none'; dotEl.style.background='var(--gold)';
+      listEl.querySelectorAll('select').forEach(function(s){s.disabled=false;s.style.opacity='1';s.style.cursor='pointer';});
+    });
+}
+
+function renderHospSuggestions(items,listEl,titleEl,dotEl,locked) {
+  if(locked){
+    titleEl.innerHTML='<span style="color:var(--gold-lt);font-weight:500;">&#9888; Estimating distances — do not select yet</span>';
+    dotEl.style.animation='pulse 1.5s ease-in-out infinite';
+    dotEl.style.background='var(--gold)';
+  } else {
+    titleEl.innerHTML='<span style="color:#5DCAA5;font-weight:500;">&#10003; Nearest Ohio trauma centers — road distance confirmed</span>';
+    dotEl.style.animation='none'; dotEl.style.background='#5DCAA5';
+  }
+  var ranks=[
+    {label:'Primary',key:'h1',cls:'rank-1'},
+    {label:'Secondary',key:'h2',cls:'rank-2'},
+    {label:'Tertiary / Specialty',key:'h3',cls:'rank-3'},
+  ];
+  var _hospData={};
+  items.forEach(function(item,idx){
+    var h=item.h; var rank=ranks[idx];
+    _hospData[idx]={name:h.name,addr:h.addr,gps:h.lat.toFixed(5)+', '+h.lon.toFixed(5),drive:item.minutes+' min',key:rank.key,phone:h.phone,level:h.level};
+    var div=document.createElement('div');
+    div.className='hosp-suggest-item';
+    div.setAttribute('data-hidx',idx);
+    var info=document.createElement('div'); info.className='hosp-suggest-info';
+    var nameRow=document.createElement('div'); nameRow.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap;';
+    var badge=document.createElement('span'); badge.className='rank-badge '+rank.cls; badge.textContent=idx+1;
+    var nameSpan=document.createElement('span'); nameSpan.className='hosp-suggest-name'; nameSpan.textContent=h.name;
+    var lvBadge=document.createElement('span'); lvBadge.style.cssText='font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;background:rgba(24,95,165,.2);color:var(--blue-lt);';
+    lvBadge.textContent=h.level;
+    nameRow.appendChild(badge); nameRow.appendChild(nameSpan); nameRow.appendChild(lvBadge);
+    var meta=document.createElement('div'); meta.className='hosp-suggest-meta';
+    meta.innerHTML=h.addr+(h.phone?' &nbsp;|&nbsp; '+h.phone:'')+'<br><strong>'+item.miles+' mi</strong> &nbsp;|&nbsp; ~'+item.minutes+' min';
+    info.appendChild(nameRow); info.appendChild(meta);
+    var actions=document.createElement('div'); actions.className='hosp-suggest-actions';
+    var sel=document.createElement('select');
+    sel.style.cssText='font-family:inherit;font-size:11px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:var(--navy-mid);color:var(--cream);cursor:pointer;';
+    sel.innerHTML='<option value="">Add to card...</option><option value="h1">Primary facility</option><option value="h2">Secondary facility</option><option value="h3">Tertiary / Specialty</option>';
+    if(locked){sel.disabled=true;sel.style.opacity='0.4';}
+    sel.addEventListener('change',(function(i,selectEl){return function(){
+      var tk=selectEl.value; if(!tk) return;
+      var d=_hospData[i]; d.key=tk;
+      fillHospCard(d.key,d.name,d.addr,d.gps,d.drive,d.phone,d.level);
+      var row=listEl.querySelector('[data-hidx="'+i+'"].hosp-suggest-item');
+      if(row) row.style.opacity='0.4';
+      selectEl.disabled=true; selectEl.style.opacity='0.5';
+    };})(idx,sel));
+    var dirBtn=document.createElement('button');
+    dirBtn.style.cssText='background:transparent;color:var(--blue-lt);border:1px solid rgba(24,95,165,.4);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;';
+    dirBtn.innerHTML='&#9655; Dir';
+    dirBtn.addEventListener('click',(function(hlat,hlon,hname,haddr){return function(){openDirTo(hlat,hlon,hname,haddr);};})(h.lat,h.lon,h.name,h.addr));
+    actions.appendChild(sel); actions.appendChild(dirBtn);
+    div.appendChild(info); div.appendChild(actions);
+    listEl.appendChild(div);
+  });
+}
+
+function fillHospCard(key,name,addr,gps,driveTime,phone,level) {
+  var set=function(id,val){var el=document.getElementById(id);if(el)el.value=val||'';};
+  set(key+'_name',name); set(key+'_addr',addr); set(key+'_gps',gps); set(key+'_time',driveTime);
+  if(phone&&document.getElementById(key+'_phone')) document.getElementById(key+'_phone').value=phone;
+  // level badge
+  var badge=document.getElementById(key+'-level-badge');
+  if(badge&&level){badge.textContent=level;badge.style.display='inline';}
+  updateDirLink(key);
+}
+
+function clearHospCard(key) {
+  ['name','addr','gps','phone','trauma','time'].forEach(function(f){var el=document.getElementById(key+'_'+f);if(el)el.value='';});
+  var badge=document.getElementById(key+'-level-badge');
+  if(badge){badge.textContent='';badge.style.display='none';}
+  var btn=document.getElementById('dir-btn-'+key);
+  if(btn) btn.href='#';
+}
+
+function updateDirLink(key) {
+  var btn=document.getElementById('dir-btn-'+key); if(!btn) return;
+  var addr=document.getElementById(key+'_addr')?document.getElementById(key+'_addr').value:'';
+  var name=document.getElementById(key+'_name')?document.getElementById(key+'_name').value:'';
+  var dest=addr||name;
+  if(dest) btn.href='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(dest);
+}
+
+function openDirTo(lat,lon,name,addr) {
+  var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  var dest=addr||name;
+  var url=isIOS?'maps://maps.apple.com/?daddr='+encodeURIComponent(dest)+'&dirflg=d':'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(dest);
+  window.open(url,'_blank');
+}
+
+// ── NWS ALERTS ────────────────────────────────────────────────────────────────
+function fetchNWSAlerts(lat,lon){
+  var sec=document.getElementById('wx-alerts-section');
+  var con=document.getElementById('wx-alerts-container');
+  con.innerHTML=''; sec.style.display='none';
+  fetch('https://api.weather.gov/alerts/active?point='+lat+','+lon+'&status=actual&message_type=alert',{headers:{'Accept':'application/geo+json','User-Agent':'BuckeyeTacMed-EP/1.0'}})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var features=data.features||[]; if(!features.length) return;
+      features.slice(0,3).forEach(function(f){
+        var p=f.properties||{};
+        var sev=(p.severity||'').toLowerCase();
+        var cls=sev==='extreme'?'alert-extreme':sev==='severe'?'alert-severe':'alert-moderate';
+        var icon=sev==='extreme'?'🔴':sev==='severe'?'🟠':'⚠️';
+        var div=document.createElement('div'); div.className='alert-banner '+cls;
+        div.innerHTML='<div class="alert-head">'+icon+' '+(p.event||'Alert').toUpperCase()+'</div><div class="alert-body">'+(p.headline||'')+'</div>';
+        con.appendChild(div);
+      });
+      sec.style.display='block';
+    }).catch(function(){});
+}
+
+// ── MULTI-DAY WEATHER ─────────────────────────────────────────────────────────
+function fetchMultiDayWeather(lat,lon){
+  var grid=document.getElementById('wx-grid');
+  var status=document.getElementById('wx-status');
+  var startDate=document.getElementById('ev_start').value;
+  var endDate=document.getElementById('ev_end').value;
+  grid.innerHTML=''; status.textContent='Fetching weather forecast...';
+
+  var url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America/New_York&forecast_days=16';
+  fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var d=data.daily||{}; if(!d.time) throw new Error('no data');
+      var days=d.time; var tmax=d.temperature_2m_max; var tmin=d.temperature_2m_min;
+      var wcode=d.weathercode; var precip=d.precipitation_probability_max;
+      var wxDesc=function(c){
+        if(c===0) return 'Clear'; if(c<=3) return 'Partly cloudy';
+        if(c<=48) return 'Foggy'; if(c<=57) return 'Drizzle';
+        if(c<=67) return 'Rain'; if(c<=77) return 'Snow';
+        if(c<=82) return 'Rain showers'; return 'Thunderstorms';
+      };
+      var filtered=[];
+      if(startDate&&endDate){
+        days.forEach(function(day,i){if(day>=startDate&&day<=endDate)filtered.push(i);});
+      }
+      if(!filtered.length) filtered=days.slice(0,7).map(function(_,i){return i;});
+
+      filtered.forEach(function(i){
+        var date=new Date(days[i]+'T12:00:00');
+        var dow=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getDay()];
+        var mn=date.getMonth()+1; var dd=date.getDate();
+        var hi=Math.round(tmax[i]); var lo=Math.round(tmin[i]);
+        var hot=hi>=90;
+        var card=document.createElement('div');
+        card.className='wx-day-card'+(hot?' wx-flag-hot':'');
+        card.innerHTML='<div class="wx-day-label">'+dow+' '+mn+'/'+dd+'</div>'+'<div class="wx-day-temp">'+hi+'°</div>'+'<div class="wx-day-cond">Lo: '+lo+'° | '+wxDesc(wcode[i])+'</div>'+'<div class="wx-day-precip">'+Math.round(precip[i])+'% precip</div>';
+        grid.appendChild(card);
+      });
+      status.textContent='Weather forecast for event dates ('+(filtered.length)+' days). High-temp days highlighted.';
+    })
+    .catch(function(){status.textContent='Could not fetch weather — check connection.';});
+}
+
+// ── GENERATE PDF ──────────────────────────────────────────────────────────────
+function generatePDF(){
+  ['h1','h2','h3'].forEach(function(key){
+    var addr=document.getElementById(key+'_addr')?document.getElementById(key+'_addr').value:'';
+    var name=document.getElementById(key+'_name')?document.getElementById(key+'_name').value:'';
+    var btn=document.getElementById('dir-btn-'+key); if(!btn) return;
+    var dest=addr||name;
+    if(dest) btn.href='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(dest);
+    else { btn.style.display='none'; }
+  });
+  window.print();
+  setTimeout(function(){
+    document.querySelectorAll('a[id^="dir-btn-"]').forEach(function(btn){btn.style.display='';});
+  },2000);
+}
+
+// ── CLEAR FORM ────────────────────────────────────────────────────────────────
+
+
+// Event delegation for dynamic remove buttons
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-remove]');
+  if (!btn) return;
+  var attr = btn.getAttribute('data-remove');
+  var parent = btn.closest('[' + attr + ']');
+  if (parent) parent.remove();
+});
+
+function removeEl(btn,sel){btn.closest(sel).remove();}
+function removeStaff(btn){btn.closest("[data-staff]").remove();}
+function toggleEvTypeOther() {
+  var sel = document.getElementById('ev_type');
+  var other = document.getElementById('ev_type_other');
+  if (sel.value === 'Other') {
+    other.style.display = 'block'; other.focus();
+  } else {
+    other.style.display = 'none'; other.value = '';
+  }
+}
+
+function autoGenerateDays() {
+  var start = document.getElementById('ev_start').value;
+  var end   = document.getElementById('ev_end').value;
+  if (!start || !end || end < start) return;
+
+  // Parse dates
+  var s = new Date(start+'T12:00:00');
+  var e = new Date(end+'T12:00:00');
+  var diff = Math.round((e-s)/(1000*60*60*24))+1;
+  if (diff > 30) return; // safety cap
+
+  var list = document.getElementById('days-list');
+  var existing = list.querySelectorAll('[data-day]').length;
+
+  // Only auto-generate if user hasn't manually added days yet
+  // or if day count changed significantly
+  if (existing > 0 && Math.abs(existing - diff) <= 1) return;
+
+  // Confirm if replacing existing days
+  if (existing > 0) {
+    if (!confirm('Regenerate '+diff+' day cards from date range? Existing day entries will be replaced.')) return;
+  }
+
+  list.innerHTML = '';
+  _dayCount = 0;
+
+  for (var i = 0; i < diff; i++) {
+    _dayCount++;
+    var idx = _dayCount;
+    var dayDate = new Date(s); dayDate.setDate(s.getDate()+i);
+    var yyyy = dayDate.getFullYear();
+    var mm = String(dayDate.getMonth()+1).padStart(2,'0');
+    var dd = String(dayDate.getDate()).padStart(2,'0');
+    var dateStr = yyyy+'-'+mm+'-'+dd;
+
+    var dow = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dayDate.getDay()];
+    var div = document.createElement('div');
+    div.className = 'day-card';
+    div.setAttribute('data-day', idx);
+    div.innerHTML =
+      '<div class="day-head">'+
+        '<span class="day-label">Day '+idx+' — '+dow+', '+mm+'/'+dd+'</span>'+
+        '<button class="btn-remove" data-remove="data-day">&#10005; Remove</button>'+
+      '</div>'+
+      '<div class="day-body">'+
+        '<div class="grid g3">'+
+          '<div class="field"><label>Date</label><input type="date" id="day_date_'+idx+'" value="'+dateStr+'"></div>'+
+          '<div class="field"><label>Start time</label><input type="time" id="day_start_'+idx+'"></div>'+
+          '<div class="field"><label>End time</label><input type="time" id="day_end_'+idx+'"></div>'+
+        '</div>'+
+        '<div class="grid g2" style="margin-top:6px;">'+
+          '<div class="field"><label>Event / activity</label><input type="text" id="day_activity_'+idx+'" placeholder="e.g. Main show, Load-in, VIP reception"></div>'+
+          '<div class="field"><label>Expected attendance</label><input type="text" id="day_attend_'+idx+'" placeholder="e.g. 12,000"></div>'+
+          '<div class="field"><label>Notes / risk factors</label><input type="text" id="day_notes_'+idx+'" placeholder="Weather concerns, schedule changes, etc."></div>'+
+        '</div>'+
+      '</div>';
+    list.appendChild(div);
+  }
+}
+
+function copyScheduleToAll() {
+  var days = document.querySelectorAll('[data-day]');
+  if (days.length < 2) { alert('Need at least 2 days to copy schedule.'); return; }
+  var firstIdx = days[0].getAttribute('data-day');
+  var startVal   = document.getElementById('day_start_'+firstIdx)?document.getElementById('day_start_'+firstIdx).value:'';
+  var endVal     = document.getElementById('day_end_'+firstIdx)?document.getElementById('day_end_'+firstIdx).value:'';
+  var actVal     = document.getElementById('day_activity_'+firstIdx)?document.getElementById('day_activity_'+firstIdx).value:'';
+  var attendVal  = document.getElementById('day_attend_'+firstIdx)?document.getElementById('day_attend_'+firstIdx).value:'';
+  if (!startVal && !actVal) { alert('Fill in Day 1 start time and activity first.'); return; }
+  days.forEach(function(day, i) {
+    if (i === 0) return;
+    var idx = day.getAttribute('data-day');
+    if(startVal && document.getElementById('day_start_'+idx)) document.getElementById('day_start_'+idx).value=startVal;
+    if(endVal && document.getElementById('day_end_'+idx)) document.getElementById('day_end_'+idx).value=endVal;
+    if(actVal && document.getElementById('day_activity_'+idx)) document.getElementById('day_activity_'+idx).value=actVal;
+    if(attendVal && document.getElementById('day_attend_'+idx)) document.getElementById('day_attend_'+idx).value=attendVal;
+  });
+  alert('Schedule copied to all '+(days.length-1)+' remaining days.');
+}
+
+function clearForm(){
+  if(!confirm('Clear the entire form? This cannot be undone.')) return;
+  document.querySelectorAll('input:not([type=radio]):not([type=checkbox]),select,textarea').forEach(function(el){el.value='';});
+  document.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(function(el){el.checked=false;});
+  document.getElementById('days-list').innerHTML=''; _dayCount=0;
+  document.getElementById('principals-list').innerHTML=''; _principalCount=0;
+  document.getElementById('staff-list').innerHTML=''; _staffCount=0;
+  document.getElementById('posts-list').innerHTML=''; _postCount=0;
+  document.getElementById('zones-list').innerHTML=''; _zoneCount=0;
+  document.getElementById('hosp-suggest').style.display='none';
+  document.getElementById('wx-alerts-section').style.display='none';
+  document.getElementById('wx-alerts-container').innerHTML='';
+  document.getElementById('wx-grid').innerHTML='';
+  document.getElementById('wx-status').textContent='Pick venue address to auto-fetch weather for event dates.';
+  ['h1','h2','h3'].forEach(function(k){clearHospCard(k);});
+  addDay(); addPrincipal(); addStaff(); addPost();
+}
+
+// ── REFRESH ───────────────────────────────────────────────────────────────────
+function refreshApp(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.update();});});
+  }
+  window.location.reload(true);
+}
+
+// Wire direction link clicks
+document.addEventListener('DOMContentLoaded',function(){
+  ['h1','h2','h3'].forEach(function(key){
+    var btn=document.getElementById('dir-btn-'+key); if(!btn) return;
+    btn.addEventListener('click',function(e){
+      if(btn.href&&btn.href!=='#'&&btn.href!==window.location.href+'#') return;
+      e.preventDefault();
+      var addr=document.getElementById(key+'_addr')?document.getElementById(key+'_addr').value:'';
+      var name=document.getElementById(key+'_name')?document.getElementById(key+'_name').value:'';
+      if(!addr&&!name){alert('Fill in the hospital name or address first.');return;}
+      openDirTo(0,0,name,addr);
+    });
+  });
+});
+
+// ── SPLASH ────────────────────────────────────────────────────────────────────
+(function() {
+  setTimeout(function() {
+    var splash  = document.getElementById('splash');
+    var pin     = document.getElementById('pin-lock');
+    var pageWrap = document.getElementById('page-wrap');
+
+    // Fade splash out
+    splash.classList.add('fade-out');
+
+    // Show PIN as splash fades, reveal body at same time
+    setTimeout(function() {
+      pin.classList.add('visible');
+      document.body.style.visibility = 'visible';
+    }, 300);
+
+    // Remove splash from DOM fully
+    setTimeout(function() {
+      splash.classList.add('gone');
+    }, 700);
+  }, 2400);
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    return Promise.all(regs.map(function(r) { return r.unregister(); }));
+  }).then(function() {
+    navigator.serviceWorker.register('ep-sw.js').catch(function(err) {
+      console.log('SW registration failed:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
